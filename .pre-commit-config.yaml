@@ -1,0 +1,41 @@
+# See https://pre-commit.com for more information
+# Python version aligned with api/pyproject.toml requires-python / tool.mypy python_version
+default_language_version:
+  python: python3.12
+
+repos:
+  # --- Python (api): Ruff format + lint (rev aligned with api ruff version) ---
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.4
+    hooks:
+      - id: ruff
+        name: ruff (api)
+        args: [--config, api/pyproject.toml]
+        files: ^api/.*\.py$
+
+  # --- Python (api): Mypy type check ---
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy (api)
+        entry: bash -c 'cd api && uv run mypy app'
+        language: system
+        files: ^api/.*\.py$
+
+  # --- Web: ESLint (lint + fix) ---
+  - repo: local
+    hooks:
+      - id: eslint
+        name: eslint (web)
+        entry: bash -c 'cd web && pnpm exec eslint . --fix'
+        language: system
+        files: ^web/.*\.(ts|tsx|js|jsx)$
+
+  # --- Web: TypeScript type check ---
+  - repo: local
+    hooks:
+      - id: typecheck
+        name: tsc (web)
+        entry: bash -c 'cd web && pnpm exec tsc -b --noEmit'
+        language: system
+        files: ^web/.*\.(ts|tsx)$

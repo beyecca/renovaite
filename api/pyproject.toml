@@ -12,4 +12,24 @@ dependencies = [
 dev = [
   "pytest",
   "pytest-django",
+  "ruff>=0.8.4",  # pin aligned with .pre-commit-config.yaml ruff-pre-commit rev
+  "mypy",
+  "django-stubs",
+  "pre-commit>=4.5.1",
 ]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+include = ["*.py", "**/pyproject.toml"]
+exclude = [".venv"]  # same as mypy exclude
+extend-select = ["I", "B", "UP"]
+fix = true
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+exclude = [".venv","migrations"]
+
+[tool.django-stubs]
+django_settings_module = "app.settings"
