@@ -23,7 +23,7 @@ line-length = 88
 target-version = "py312"
 include = ["*.py", "**/pyproject.toml"]
 exclude = [".venv"]  # same as mypy exclude
-extend-select = ["I", "B", "UP"]
+lint.extend-select = ["I", "B", "UP"]
 fix = true
 
 [tool.mypy]
