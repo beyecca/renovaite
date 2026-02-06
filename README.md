@@ -42,3 +42,9 @@ On push/PR to `main`, the workflow runs:
 3. **Docker**: Build API image (after API job passes)
 
 Workflow: [.github/workflows/ci.yml](.github/workflows/ci.yml).
+
+## Releases and changelog
+
+- **PR titles** must follow [Conventional Commits](https://www.conventionalcommits.org/) (e.g. `feat: add login`, `fix: api timeout`). The PR title check enforces this.
+- **Changelog** is maintained by [Release Please](https://github.com/googleapis/release-please). On every push to `main`, it opens or updates a **Release PR** that updates [CHANGELOG.md](CHANGELOG.md) from conventional commits.
+- **To release**: Merge the Release PR. That updates `CHANGELOG.md` and creates the Git tag and GitHub Release.
