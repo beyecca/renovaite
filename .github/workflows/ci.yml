@@ -55,6 +55,9 @@ jobs:
         run: |
           uv run python -m compileall .
           uv run python manage.py check
+      
+      - name: Run tests
+        run: uv run pytest
   web:
     name: Web (pnpm + Vite)
     runs-on: ubuntu-latest
