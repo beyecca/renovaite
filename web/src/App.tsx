@@ -56,7 +56,7 @@ export default function App() {
       }}
     >
       <header style={{ marginBottom: 16 }}>
-        <h1 style={{ margin: 0 }}>RenoBrain</h1>
+        <h1 style={{ margin: 0 }}>RenovAIte</h1>
         <p style={{ marginTop: 8, color: "#555" }}>
           Demo app for learning Django Ninja + React/TS + containers + AWS deploys.
         </p>

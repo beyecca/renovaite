@@ -31,7 +31,7 @@ export function LandingPage() {
   return (
     <div style={{ fontFamily: "system-ui", padding: 24, maxWidth: 960, margin: "0 auto" }}>
       <header style={{ marginBottom: 16 }}>
-        <h1 style={{ margin: 0 }}>RenoBrain</h1>
+        <h1 style={{ margin: 0 }}>RenovAIte</h1>
         <p style={{ marginTop: 8, color: "#555" }}>
           A small demo app for learning Django Ninja + React/TS + containers + AWS deploys.
         </p>

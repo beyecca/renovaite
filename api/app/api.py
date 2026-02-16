@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from django.http import HttpRequest
 from ninja import NinjaAPI
 
-api = NinjaAPI(title="RenoBrain API", version="0.1.0")
+api = NinjaAPI(title="Renovaite API", version="0.1.0")
 
 
 @api.get("/healthz")

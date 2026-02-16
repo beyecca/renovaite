@@ -1,4 +1,4 @@
-# RenoBrain
+# RenovAIte
 
 Monorepo: API (Django + Ninja) and Web (React + Vite).
 

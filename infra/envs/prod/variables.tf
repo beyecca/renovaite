@@ -5,7 +5,7 @@ variable "aws_region" {
 
 variable "project_name" {
   type    = string
-  default = "renobrain"
+  default = "renovaite"
 }
 
 variable "github_owner" {
