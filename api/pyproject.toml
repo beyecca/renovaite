@@ -5,6 +5,8 @@ requires-python = ">=3.12"
 dependencies = [
   "django>=5.0",
   "django-ninja>=1.1",
+  "django-ninja-jwt>=5.3",
+  "pydantic[email]>=2.12.5",
   "uvicorn[standard]>=0.30",
 ]
 
@@ -30,6 +32,7 @@ fix = true
 python_version = "3.12"
 strict = true
 exclude = [".venv","migrations"]
+plugins = ["mypy_django_plugin.main"]
 
 [tool.django-stubs]
 django_settings_module = "renovaite.settings.dev"
