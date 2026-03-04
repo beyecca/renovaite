@@ -21,4 +21,4 @@ ENV PYTHONUNBUFFERED=1
 EXPOSE 8000
 
 # More robust than relying on a uvicorn executable being on PATH
-CMD ["python", "-m", "uvicorn", "app.asgi:application", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python", "-m", "uvicorn", "renovaite.asgi:application", "--host", "0.0.0.0", "--port", "8000"]

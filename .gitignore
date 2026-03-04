@@ -13,6 +13,8 @@
 __pycache__/
 *.pyc
 .venv/
+.ruff_cache/
+.uv-cache/
 
 # Terraform
 *.tfstate

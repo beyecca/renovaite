@@ -32,4 +32,4 @@ strict = true
 exclude = [".venv","migrations"]
 
 [tool.django-stubs]
-django_settings_module = "app.settings"
+django_settings_module = "renovaite.settings.dev"
