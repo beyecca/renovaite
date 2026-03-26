@@ -14,7 +14,7 @@ export function LoginPage() {
         const email = formData.get("email") as string;
         setEmail(email);
         setFormState({ state: "loading" });
-        const resp = await postJson("/auth/magic-link", { email });
+        const resp = await postJson("/api/auth/magic-link", { email });
         if (resp.ok) {
             setFormState({ state: "sent" });
         } else {

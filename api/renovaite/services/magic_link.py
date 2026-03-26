@@ -7,16 +7,7 @@ from django.utils import timezone
 
 from renovaite.models.magic_link import MagicLinkToken
 
-
-def send_magic_link_email(email: str, token: str) -> None:
-    verify_url = f"{settings.MAGIC_LINK_BASE_URL}/auth/verify?token={token}"
-    send_mail(
-        subject="Your Renovaite login link",
-        message=f"Click the link below to log in. It expires in {settings.MAGIC_LINK_EXPIRY_MINUTES} minutes.\n\n{verify_url}",
-        from_email="noreply@renovaite.com",
-        recipient_list=[email],
-        fail_silently=False,
-    )
+from_email = settings.DEFAULT_FROM_EMAIL
 
 
 class MagicLinkService:
@@ -44,7 +35,7 @@ class MagicLinkService:
         """
         try:
             token = MagicLinkToken.objects.get(token=token_str)
-        except (MagicLinkToken.DoesNotExist, Exception):
+        except MagicLinkToken.DoesNotExist:
             raise ValueError("invalid token") from None
 
         if token.used_at is not None:
@@ -60,3 +51,14 @@ class MagicLinkService:
             return User.objects.get(email=token.email)
         except User.DoesNotExist:
             raise ValueError("invalid token") from None
+
+
+def send_magic_link_email(email: str, token: str) -> None:
+    verify_url = f"{settings.MAGIC_LINK_BASE_URL}/auth/verify?token={token}"
+    send_mail(
+        subject="Your Renovaite login link",
+        message=f"Click the link below to log in. It expires in {settings.MAGIC_LINK_EXPIRY_MINUTES} minutes.\n\n{verify_url}",
+        from_email=from_email,
+        recipient_list=[email],
+        fail_silently=False,
+    )

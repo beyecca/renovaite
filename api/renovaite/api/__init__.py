@@ -3,36 +3,24 @@ from datetime import UTC, datetime
 from typing import cast
 
 from django.http import HttpRequest
-from ninja import NinjaAPI, Router, Schema
+from ninja import NinjaAPI, Router
+from ninja_jwt.authentication import JWTAuth
 from ninja_jwt.schema_control import SchemaControl
 from ninja_jwt.settings import api_settings
 from ninja_jwt.tokens import RefreshToken
-from pydantic import EmailStr
 
+from renovaite.schemas.auth import (
+    ErrorOut,
+    MagicLinkRequestIn,
+    MagicLinkRequestOut,
+    TokenPairOut,
+)
 from renovaite.services.magic_link import MagicLinkService
 
 api = NinjaAPI(title="Renovaite API", version="0.1.0")
-
+auth = JWTAuth()
 _schema = SchemaControl(api_settings)
 auth_router = Router(tags=["auth"])
-
-
-class MagicLinkRequestIn(Schema):
-    email: EmailStr
-
-
-class MagicLinkRequestOut(Schema):
-    message: str
-
-
-class TokenPairOut(Schema):
-    access: str
-    refresh: str
-
-
-class ErrorOut(Schema):
-    error: str
-    code: str
 
 
 @auth_router.post(

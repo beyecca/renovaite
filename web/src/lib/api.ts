@@ -1,3 +1,5 @@
+import { getAccessToken } from "./auth";
+
 export interface ApiError {
   status: number;
   code: string;
@@ -34,10 +36,22 @@ export async function request<T>(path: string, options?: RequestInit): Promise<A
   };
 }
 
+
+export async function authRequest<T>(path: string, options?:
+  RequestInit): Promise<ApiResult<T>> {
+  const token = getAccessToken();
+  return request(path, {
+    ...options,
+    headers: {
+      ...options?.headers,
+      Authorization: token ? `Bearer ${token}` : "",
+    },
+  });
+}
+
 export async function fetchJson<T>(path: string, options?: RequestInit): Promise<ApiResult<T>> {
   return request(path, options);
 }
-
 
 export async function postJson<T>(path: string, body: unknown): Promise<ApiResult<T>> {
   return await request(path, {

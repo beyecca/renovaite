@@ -35,7 +35,7 @@ describe("LoginPage", () => {
         const user = userEvent.setup();
         await user.type(loginInput, "test@example.com");
         await user.click(loginSubmit);
-        await waitFor(() => expect(fetch).toHaveBeenCalledWith("/auth/magic-link", expect.objectContaining({
+        await waitFor(() => expect(fetch).toHaveBeenCalledWith("/api/auth/magic-link", expect.objectContaining({
             method: "POST",
             body: JSON.stringify({ email: "test@example.com" })
         })))
