@@ -18,7 +18,7 @@ export function LoginPage() {
         if (resp.ok) {
             setFormState({ state: "sent" });
         } else {
-            setFormState({ state: "error", message: `${resp.kind} - ${resp.error}` });
+            setFormState({ state: "error", message: "Something went wrong. Please try again." });
         }
     }
     function renderContent() {
@@ -29,7 +29,8 @@ export function LoginPage() {
                 return <p data-testid="email-errored-message">{formState.message}</p>
             default: // idle + loading
                 return <>
-                    <input name="email" type="email" data-testid="email-login-input" />
+                    <label htmlFor="email-login-input">Email</label>
+                    <input id="email-login-input" name="email" type="email" data-testid="email-login-input" />
                     <button type="submit" disabled={formState.state === "loading"} data-testid="email-login-submit">Send magic link</button>
                 </>
         }

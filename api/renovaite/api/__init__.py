@@ -1,6 +1,5 @@
 import os
 from datetime import UTC, datetime
-from typing import cast
 
 from django.http import HttpRequest
 from ninja import NinjaAPI, Router
@@ -13,6 +12,7 @@ from renovaite.schemas.auth import (
     ErrorOut,
     MagicLinkRequestIn,
     MagicLinkRequestOut,
+    MagicLinkVerifyIn,
     TokenPairOut,
 )
 from renovaite.services.magic_link import MagicLinkService
@@ -38,21 +38,21 @@ def request_magic_link(
     )
 
 
-@auth_router.get(
+@auth_router.post(
     "/magic-link/verify",
     response={200: TokenPairOut, 401: ErrorOut},
     auth=None,
     url_name="magic_link_verify",
 )
 def verify_magic_link(
-    request: HttpRequest, token: str
+    request: HttpRequest, payload: MagicLinkVerifyIn
 ) -> tuple[int, TokenPairOut | ErrorOut]:
     try:
-        user = MagicLinkService.verify(token)
+        user = MagicLinkService.verify(payload.token)
     except ValueError:
         return 401, ErrorOut(error="Invalid or expired token.", code="UNAUTHORIZED")
 
-    refresh = cast(RefreshToken, RefreshToken.for_user(user))
+    refresh: RefreshToken = RefreshToken.for_user(user)  # type: ignore[assignment]
     return 200, TokenPairOut(access=str(refresh.access_token), refresh=str(refresh))
 
 

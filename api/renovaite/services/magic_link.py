@@ -3,11 +3,10 @@ from datetime import timedelta
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
+from django.db import transaction
 from django.utils import timezone
 
 from renovaite.models.magic_link import MagicLinkToken
-
-from_email = settings.DEFAULT_FROM_EMAIL
 
 
 class MagicLinkService:
@@ -33,24 +32,22 @@ class MagicLinkService:
         Marks the token as used on success.
         Raises ValueError on invalid, expired, or already-used tokens.
         """
-        try:
-            token = MagicLinkToken.objects.get(token=token_str)
-        except MagicLinkToken.DoesNotExist:
-            raise ValueError("invalid token") from None
+        with transaction.atomic():
+            try:
+                token = MagicLinkToken.objects.select_for_update().get(token=token_str)
+            except MagicLinkToken.DoesNotExist:
+                raise ValueError("invalid token") from None
 
-        if token.used_at is not None:
-            raise ValueError("token already used")
+            if token.used_at is not None:
+                raise ValueError("token already used")
+            if timezone.now() > token.expires_at:
+                raise ValueError("token expired")
 
-        if timezone.now() > token.expires_at:
-            raise ValueError("token expired")
+            token.used_at = timezone.now()
+            token.is_deleted = True
+            token.save(update_fields=["used_at", "is_deleted", "updated_at"])
 
-        token.used_at = timezone.now()
-        token.save(update_fields=["used_at"])
-
-        try:
-            return User.objects.get(email=token.email)
-        except User.DoesNotExist:
-            raise ValueError("invalid token") from None
+        return User.objects.get(email=token.email)
 
 
 def send_magic_link_email(email: str, token: str) -> None:
@@ -58,7 +55,7 @@ def send_magic_link_email(email: str, token: str) -> None:
     send_mail(
         subject="Your Renovaite login link",
         message=f"Click the link below to log in. It expires in {settings.MAGIC_LINK_EXPIRY_MINUTES} minutes.\n\n{verify_url}",
-        from_email=from_email,
+        from_email=settings.DEFAULT_FROM_EMAIL,
         recipient_list=[email],
         fail_silently=False,
     )

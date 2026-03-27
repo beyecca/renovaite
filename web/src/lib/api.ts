@@ -37,20 +37,19 @@ export async function request<T>(path: string, options?: RequestInit): Promise<A
 }
 
 
-export async function authRequest<T>(path: string, options?:
-  RequestInit): Promise<ApiResult<T>> {
+export async function authRequest<T>(path: string, options?: RequestInit): Promise<ApiResult<T>> {
   const token = getAccessToken();
-  return request(path, {
+  const result = await request<T>(path, {
     ...options,
     headers: {
       ...options?.headers,
-      Authorization: token ? `Bearer ${token}` : "",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
   });
-}
-
-export async function fetchJson<T>(path: string, options?: RequestInit): Promise<ApiResult<T>> {
-  return request(path, options);
+  if (!result.ok && result.kind === "client_error" && result.status === 401) {
+    window.location.href = "/login";
+  }
+  return result;
 }
 
 export async function postJson<T>(path: string, body: unknown): Promise<ApiResult<T>> {

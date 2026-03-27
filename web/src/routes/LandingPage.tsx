@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchJson } from "../lib/api";
+import { request } from "../lib/api";
 import type { HealthzResponse } from "../types/api";
 
 type LoadState =
@@ -14,7 +14,7 @@ export function LandingPage() {
     const controller = new AbortController();
 
     async function run() {
-      const result = await fetchJson<HealthzResponse>("/api/healthz", {signal: controller.signal});
+      const result = await request<HealthzResponse>("/api/healthz", {signal: controller.signal});
         if (result.ok) {
             setHealth({ state: "ok", data: result.data });
         } else {

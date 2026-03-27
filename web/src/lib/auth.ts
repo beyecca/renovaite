@@ -1,3 +1,5 @@
+// NOTE: Using localStorage for simplicity in this phase.
+// Tokens are susceptible to XSS. Plan to migrate to httpOnly cookies before public launch.
 const ACCESS_KEY = "access_token";
 const REFRESH_KEY = "refresh_token";
 

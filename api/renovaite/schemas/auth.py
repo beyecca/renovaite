@@ -1,5 +1,3 @@
-
-
 from ninja import Schema
 from pydantic import EmailStr
 
@@ -20,3 +18,7 @@ class TokenPairOut(Schema):
 class ErrorOut(Schema):
     error: str
     code: str
+
+
+class MagicLinkVerifyIn(Schema):
+    token: str
