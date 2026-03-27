@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.0](https://github.com/beyecca/renovaite/compare/v0.1.2...v0.2.0) (2026-03-27)
+
+
+### Features
+
+* implement magic link auth flow (PRD 1) ([#5](https://github.com/beyecca/renovaite/issues/5)) ([b2aef49](https://github.com/beyecca/renovaite/commit/b2aef49e8e1de55a52560280ffd72b8d4726d494))
+* passwordless magic link auth with JWT [prd1/feat-auth-setup] ([#3](https://github.com/beyecca/renovaite/issues/3)) ([bb57cfa](https://github.com/beyecca/renovaite/commit/bb57cfa0fc619833e2b3a81e525e7c839bdad735))
+
 ## [0.1.2](https://github.com/beyecca/renobrain/compare/v0.1.1...v0.1.2) (2026-02-06)
 
 
