@@ -10,8 +10,7 @@ Renovaite is a Django + React application that helps homeowners plan renovation 
    `renovaite-engineering-standards/SKILL.md`
 
 2. **Read the relevant PRD from Notion** — the PRD is the source of truth for what to build.
-   Notion workspace: https://www.notion.so/Renovaite-e12595b6f47e4fb2acbf6ab87cfc0a4d
-   PRDs database: https://www.notion.so/bdc2a576d3da411b8deec0dfbb8e6240
+   Ask the user to provide the Notion workspace URL, PRDs database URL, and the specific PRD URL before proceeding.
 
 3. **Confirm the task and branch name before writing any code.** Branch convention:
    `prd{N}/feat-short-desc` (e.g. `prd1/feat-project-model`, `prd1.5/feat-plan-builder`)
@@ -70,7 +69,7 @@ When completing a task:
 1. Update the task status in the Notion Tasks DB to `In Review` or `Done`
 2. Add the branch name to the `Branch / PR` field on the task
 
-Tasks DB: https://www.notion.so/3af49c988c75417abce355774af9a444
+Ask the user to provide the Notion Tasks DB URL if needed.
 
 ---
 
