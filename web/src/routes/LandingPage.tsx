@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { fetchJson } from "../lib/api";
+import { request } from "../lib/api";
 import type { HealthzResponse } from "../types/api";
-import { isNamedError } from "../lib/errors";
 
 type LoadState =
   | { state: "loading" }
@@ -15,13 +14,12 @@ export function LandingPage() {
     const controller = new AbortController();
 
     async function run() {
-      try {
-        const data = await fetchJson<HealthzResponse>("/api/healthz", controller.signal);
-        setHealth({ state: "ok", data });
-      } catch (e: unknown) {
-        if (isNamedError(e) && e.name === "AbortError") return;
-        setHealth({ state: "error", message: (e as Error).message });
-      }
+      const result = await request<HealthzResponse>("/api/healthz", {signal: controller.signal});
+        if (result.ok) {
+            setHealth({ state: "ok", data: result.data });
+        } else {
+            setHealth({ state: "error", message: `${result.kind} - ${result.error}` });
+        }
     }
 
     run();

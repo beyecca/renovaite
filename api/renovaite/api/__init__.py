@@ -1,40 +1,28 @@
 import os
 from datetime import UTC, datetime
-from typing import cast
 
 from django.http import HttpRequest
-from ninja import NinjaAPI, Router, Schema
+from ninja import NinjaAPI, Router
+from ninja_jwt.authentication import JWTAuth
 from ninja_jwt.schema_control import SchemaControl
 from ninja_jwt.settings import api_settings
-from ninja_jwt.tokens import RefreshToken
-from pydantic import EmailStr
 
+from renovaite.schemas.auth import (
+    ErrorOut,
+    MagicLinkRequestIn,
+    MagicLinkRequestOut,
+    MagicLinkVerifyIn,
+    TokenPairOut,
+)
 from renovaite.services.magic_link import MagicLinkService
 
-api = NinjaAPI(title="Renovaite API", version="0.1.0")
-
+api = NinjaAPI(title="Renovaite API", version="0.1.0", auth=JWTAuth())
 _schema = SchemaControl(api_settings)
 auth_router = Router(tags=["auth"])
 
 
-class MagicLinkRequestIn(Schema):
-    email: EmailStr
-
-
-class MagicLinkRequestOut(Schema):
-    message: str
-
-
-class TokenPairOut(Schema):
-    access: str
-    refresh: str
-
-
-class ErrorOut(Schema):
-    error: str
-    code: str
-
-
+# TODO(pre-launch): add per-IP rate limiting (e.g. django-ratelimit 5/min) to prevent
+# email spam abuse. This endpoint is fully public and unbounded.
 @auth_router.post(
     "/magic-link",
     response=MagicLinkRequestOut,
@@ -50,22 +38,21 @@ def request_magic_link(
     )
 
 
-@auth_router.get(
+@auth_router.post(
     "/magic-link/verify",
     response={200: TokenPairOut, 401: ErrorOut},
     auth=None,
     url_name="magic_link_verify",
 )
 def verify_magic_link(
-    request: HttpRequest, token: str
+    request: HttpRequest, payload: MagicLinkVerifyIn
 ) -> tuple[int, TokenPairOut | ErrorOut]:
     try:
-        user = MagicLinkService.verify(token)
+        access, refresh = MagicLinkService.verify_and_issue_tokens(payload.token)
     except ValueError:
         return 401, ErrorOut(error="Invalid or expired token.", code="UNAUTHORIZED")
 
-    refresh = cast(RefreshToken, RefreshToken.for_user(user))
-    return 200, TokenPairOut(access=str(refresh.access_token), refresh=str(refresh))
+    return 200, TokenPairOut(access=access, refresh=refresh)
 
 
 @auth_router.post(
