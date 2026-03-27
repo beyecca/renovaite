@@ -1,3 +1,4 @@
+import logging
 from datetime import timedelta
 
 from django.conf import settings
@@ -8,6 +9,8 @@ from django.utils import timezone
 
 from renovaite.models.magic_link import MagicLinkToken
 
+logger = logging.getLogger(__name__)
+
 
 class MagicLinkService:
     @staticmethod
@@ -16,9 +19,8 @@ class MagicLinkService:
         Create a magic link token and send an email.
         If the email is not registered, do nothing silently (no account enumeration).
         """
-        try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
+        user = User.objects.filter(email=email).first()
+        if user is None:
             return
 
         expiry = timezone.now() + timedelta(minutes=settings.MAGIC_LINK_EXPIRY_MINUTES)
@@ -55,10 +57,13 @@ class MagicLinkService:
 
 def send_magic_link_email(email: str, token: str) -> None:
     verify_url = f"{settings.MAGIC_LINK_BASE_URL}/auth/verify?token={token}"
-    send_mail(
-        subject="Your Renovaite login link",
-        message=f"Click the link below to log in. It expires in {settings.MAGIC_LINK_EXPIRY_MINUTES} minutes.\n\n{verify_url}",
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[email],
-        fail_silently=False,
-    )
+    try:
+        send_mail(
+            subject="Your Renovaite login link",
+            message=f"Click the link below to log in. It expires in {settings.MAGIC_LINK_EXPIRY_MINUTES} minutes.\n\n{verify_url}",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[email],
+            fail_silently=False,
+        )
+    except Exception:
+        logger.exception("Failed to send magic link email to %s", email)

@@ -17,8 +17,7 @@ from renovaite.schemas.auth import (
 )
 from renovaite.services.magic_link import MagicLinkService
 
-api = NinjaAPI(title="Renovaite API", version="0.1.0")
-auth = JWTAuth()
+api = NinjaAPI(title="Renovaite API", version="0.1.0", auth=JWTAuth())
 _schema = SchemaControl(api_settings)
 auth_router = Router(tags=["auth"])
 
