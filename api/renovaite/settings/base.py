@@ -73,5 +73,4 @@ STATIC_URL = "static/"
 MAGIC_LINK_BASE_URL = os.getenv("MAGIC_LINK_BASE_URL", "http://localhost:5173")
 MAGIC_LINK_EXPIRY_MINUTES = int(os.getenv("MAGIC_LINK_EXPIRY_MINUTES", "15"))
 
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL",
-"noreply@renovaite.com")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "noreply@renovaite.com")

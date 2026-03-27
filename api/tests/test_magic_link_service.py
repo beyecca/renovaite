@@ -7,7 +7,6 @@ from django.utils import timezone
 
 # TODO: consolidate the `user` fixture into api/tests/conftest.py — it is duplicated
 # verbatim in test_auth.py.
-
 pytestmark = pytest.mark.django_db
 
 

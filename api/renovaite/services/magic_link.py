@@ -31,7 +31,9 @@ class MagicLinkService:
         expiry = timezone.now() + timedelta(minutes=settings.MAGIC_LINK_EXPIRY_MINUTES)
         try:
             with transaction.atomic():
-                token = MagicLinkToken.objects.create(email=user.email, expires_at=expiry)
+                token = MagicLinkToken.objects.create(
+                    email=user.email, expires_at=expiry
+                )
                 send_magic_link_email(email=email, token=str(token.token))
         except Exception:
             logger.exception("Failed to send magic link email to %s", email)
