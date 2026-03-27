@@ -39,7 +39,7 @@ describe("VerifyPage", () => {
 
     test("shows loading state while verifying", () => {
         renderWithToken("some-token");
-        expect(screen.getByTestId("verify-loading")).toBeVisible();
+        expect(screen.getByText(/verifying your link/i)).toBeVisible();
     });
 
     test("navigates home and stores tokens on success", async () => {

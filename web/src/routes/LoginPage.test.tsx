@@ -22,19 +22,15 @@ describe("LoginPage", () => {
 
     test("login form exists", async () => {
         render(<LoginPage />);
-        const loginInput = screen.getByTestId("email-login-input");
-        const loginSubmit = screen.getByTestId("email-login-submit");
-        expect(loginInput).toBeVisible();
-        expect(loginSubmit).toBeVisible();
+        expect(screen.getByLabelText("Email")).toBeVisible();
+        expect(screen.getByRole("button", { name: /send magic link/i })).toBeVisible();
     });
 
     test("login form submit calls api", async () => {
         render(<LoginPage />);
-        const loginInput = screen.getByTestId("email-login-input");
-        const loginSubmit = screen.getByTestId("email-login-submit");
         const user = userEvent.setup();
-        await user.type(loginInput, "test@example.com");
-        await user.click(loginSubmit);
+        await user.type(screen.getByLabelText("Email"), "test@example.com");
+        await user.click(screen.getByRole("button", { name: /send magic link/i }));
         await waitFor(() => expect(fetch).toHaveBeenCalledWith("/api/auth/magic-link", expect.objectContaining({
             method: "POST",
             body: JSON.stringify({ email: "test@example.com" })
@@ -43,13 +39,10 @@ describe("LoginPage", () => {
 
     test("login form submit returns sent message on success", async () => {
         render(<LoginPage />);
-        const loginInput = screen.getByTestId("email-login-input");
-        const loginSubmit = screen.getByTestId("email-login-submit");
         const user = userEvent.setup();
-        await user.type(loginInput, "test@example.com");
-        await user.click(loginSubmit);
-        const sentMessage = await screen.findByTestId("email-sent-message");
-        expect(sentMessage).toBeVisible()
+        await user.type(screen.getByLabelText("Email"), "test@example.com");
+        await user.click(screen.getByRole("button", { name: /send magic link/i }));
+        expect(await screen.findByTestId("email-sent-message")).toBeVisible();
     });
 
     test("login form submit returns failure message on failure", async () => {
@@ -58,12 +51,9 @@ describe("LoginPage", () => {
             { status: 404, headers: { "Content-Type": "application/json" } }
         )));
         render(<LoginPage />);
-        const loginInput = screen.getByTestId("email-login-input");
-        const loginSubmit = screen.getByTestId("email-login-submit");
         const user = userEvent.setup();
-        await user.type(loginInput, "test@example.com");
-        await user.click(loginSubmit);
-        const failedMessage = await screen.findByTestId("email-errored-message");
-        expect(failedMessage).toBeVisible()
+        await user.type(screen.getByLabelText("Email"), "test@example.com");
+        await user.click(screen.getByRole("button", { name: /send magic link/i }));
+        expect(await screen.findByTestId("email-errored-message")).toBeVisible();
     });
 });

@@ -17,5 +17,8 @@ class MagicLinkToken(models.Model):
     class Meta:
         db_table = "magic_link_tokens"
 
+    # TODO: add a management command or periodic task to hard-purge tokens where
+    # expires_at < now() - timedelta(days=7) to prevent unbounded table growth.
+
     def __str__(self) -> str:
         return f"MagicLinkToken({self.email})"

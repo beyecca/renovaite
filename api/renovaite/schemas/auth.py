@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from ninja import Schema
 from pydantic import EmailStr
 
@@ -21,4 +23,4 @@ class ErrorOut(Schema):
 
 
 class MagicLinkVerifyIn(Schema):
-    token: str
+    token: UUID

@@ -1,5 +1,6 @@
 import logging
 from datetime import timedelta
+from uuid import UUID
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -10,6 +11,9 @@ from django.utils import timezone
 from renovaite.models.magic_link import MagicLinkToken
 
 logger = logging.getLogger(__name__)
+
+# TODO: move send_magic_link_email to MagicLinkService._send_email to make it
+# private to the service interface, consistent with the services pattern.
 
 
 class MagicLinkService:
@@ -24,11 +28,16 @@ class MagicLinkService:
             return
 
         expiry = timezone.now() + timedelta(minutes=settings.MAGIC_LINK_EXPIRY_MINUTES)
-        token = MagicLinkToken.objects.create(email=user.email, expires_at=expiry)
-        send_magic_link_email(email=email, token=str(token.token))
+        try:
+            with transaction.atomic():
+                token = MagicLinkToken.objects.create(email=user.email, expires_at=expiry)
+                send_magic_link_email(email=email, token=str(token.token))
+        except Exception:
+            logger.exception("Failed to send magic link email to %s", email)
+            # Don't re-raise — response is always 200 to prevent account enumeration.
 
     @staticmethod
-    def verify(token_str: str) -> User:
+    def verify(token_id: UUID) -> User:
         """
         Validate a magic link token and return the associated user.
         Marks the token as used on success.
@@ -36,7 +45,9 @@ class MagicLinkService:
         """
         with transaction.atomic():
             try:
-                token = MagicLinkToken.objects.select_for_update().get(token=token_str)
+                token = MagicLinkToken.objects.select_for_update().get(
+                    token=token_id, is_deleted=False
+                )
             except MagicLinkToken.DoesNotExist:
                 raise ValueError("invalid token") from None
 
@@ -45,25 +56,24 @@ class MagicLinkService:
             if timezone.now() > token.expires_at:
                 raise ValueError("token expired")
 
+            try:
+                user = User.objects.get(email=token.email)
+            except (User.DoesNotExist, User.MultipleObjectsReturned):
+                raise ValueError("user not found") from None
+
             token.used_at = timezone.now()
             token.is_deleted = True
             token.save(update_fields=["used_at", "is_deleted", "updated_at"])
 
-        try:
-            return User.objects.get(email=token.email)
-        except User.DoesNotExist:
-            raise ValueError("user not found") from None
+        return user
 
 
 def send_magic_link_email(email: str, token: str) -> None:
     verify_url = f"{settings.MAGIC_LINK_BASE_URL}/auth/verify?token={token}"
-    try:
-        send_mail(
-            subject="Your Renovaite login link",
-            message=f"Click the link below to log in. It expires in {settings.MAGIC_LINK_EXPIRY_MINUTES} minutes.\n\n{verify_url}",
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[email],
-            fail_silently=False,
-        )
-    except Exception:
-        logger.exception("Failed to send magic link email to %s", email)
+    send_mail(
+        subject="Your Renovaite login link",
+        message=f"Click the link below to log in. It expires in {settings.MAGIC_LINK_EXPIRY_MINUTES} minutes.\n\n{verify_url}",
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[email],
+        fail_silently=False,
+    )
