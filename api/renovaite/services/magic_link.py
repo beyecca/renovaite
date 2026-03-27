@@ -7,6 +7,7 @@ from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from django.db import transaction
 from django.utils import timezone
+from ninja_jwt.tokens import RefreshToken
 
 from renovaite.models.magic_link import MagicLinkToken
 
@@ -66,6 +67,13 @@ class MagicLinkService:
             token.save(update_fields=["used_at", "is_deleted", "updated_at"])
 
         return user
+
+    @staticmethod
+    def verify_and_issue_tokens(token_id: UUID) -> tuple[str, str]:
+        """Verify a magic link token and return (access_token, refresh_token)."""
+        user = MagicLinkService.verify(token_id)
+        refresh: RefreshToken = RefreshToken.for_user(user)  # type: ignore[assignment]
+        return str(refresh.access_token), str(refresh)
 
 
 def send_magic_link_email(email: str, token: str) -> None:

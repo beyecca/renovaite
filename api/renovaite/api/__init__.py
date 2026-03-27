@@ -6,7 +6,6 @@ from ninja import NinjaAPI, Router
 from ninja_jwt.authentication import JWTAuth
 from ninja_jwt.schema_control import SchemaControl
 from ninja_jwt.settings import api_settings
-from ninja_jwt.tokens import RefreshToken
 
 from renovaite.schemas.auth import (
     ErrorOut,
@@ -49,12 +48,11 @@ def verify_magic_link(
     request: HttpRequest, payload: MagicLinkVerifyIn
 ) -> tuple[int, TokenPairOut | ErrorOut]:
     try:
-        user = MagicLinkService.verify(payload.token)
+        access, refresh = MagicLinkService.verify_and_issue_tokens(payload.token)
     except ValueError:
         return 401, ErrorOut(error="Invalid or expired token.", code="UNAUTHORIZED")
 
-    refresh: RefreshToken = RefreshToken.for_user(user)  # type: ignore[assignment]
-    return 200, TokenPairOut(access=str(refresh.access_token), refresh=str(refresh))
+    return 200, TokenPairOut(access=access, refresh=refresh)
 
 
 @auth_router.post(
