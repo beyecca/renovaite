@@ -23,6 +23,8 @@ _schema = SchemaControl(api_settings)
 auth_router = Router(tags=["auth"])
 
 
+# TODO(pre-launch): add per-IP rate limiting (e.g. django-ratelimit 5/min) to prevent
+# email spam abuse. This endpoint is fully public and unbounded.
 @auth_router.post(
     "/magic-link",
     response=MagicLinkRequestOut,

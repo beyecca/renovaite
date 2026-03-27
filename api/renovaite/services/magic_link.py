@@ -47,7 +47,10 @@ class MagicLinkService:
             token.is_deleted = True
             token.save(update_fields=["used_at", "is_deleted", "updated_at"])
 
-        return User.objects.get(email=token.email)
+        try:
+            return User.objects.get(email=token.email)
+        except User.DoesNotExist:
+            raise ValueError("user not found") from None
 
 
 def send_magic_link_email(email: str, token: str) -> None:
