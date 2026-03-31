@@ -1,23 +1,25 @@
 # RenovAIte
 
-Monorepo: API (Django + Ninja) and Web (React + Vite).
+Monorepo: API (FastAPI + SQLModel) and Web (React + Vite).
 
 ## Structure
 
 ```
 renovaite/
-├── api/                        # Django + Ninja API
+├── api/                        # FastAPI + SQLModel API
 │   ├── renovaite/
 │   │   ├── settings/
-│   │   │   ├── base.py         # Shared settings
-│   │   │   ├── dev.py          # Local development
+│   │   │   ├── base.py         # pydantic-settings BaseSettings
+│   │   │   ├── dev.py          # Local development overrides
 │   │   │   └── prod.py         # Production (env-var-driven)
-│   │   ├── api/                # Endpoints
-│   │   ├── models/
-│   │   ├── schemas/
-│   │   ├── services/
+│   │   ├── api/                # Endpoints (FastAPI routers)
+│   │   ├── models/             # SQLModel table classes
+│   │   ├── schemas/            # Pydantic request/response schemas
+│   │   ├── services/           # Business logic
+│   │   ├── db.py               # Engine + get_session dependency
+│   │   ├── main.py             # App factory + router mounts
 │   │   └── ai/
-│   └── manage.py
+│   └── alembic/                # Database migrations
 ├── web/                        # React + TypeScript + Vite
 │   └── src/
 │       ├── routes/             # Page-level components
@@ -33,7 +35,7 @@ renovaite/
 ### API (`api/`)
 
 - Python 3.12, [uv](https://docs.astral.sh/uv/)
-- From `api/`: `uv sync --dev`, then `uv run python manage.py runserver`
+- From `api/`: `uv sync --dev`, then `uv run alembic upgrade head` and `uv run uvicorn renovaite.main:app --reload`
 
 ### Web (`web/`)
 
@@ -75,7 +77,7 @@ pre-commit run --all-files
 
 On push/PR to `main`, the workflow runs:
 
-1. **API**: Ruff (format check + lint), Mypy, compileall, `manage.py check`, pytest
+1. **API**: Ruff (format check + lint), Mypy, pytest
 2. **Web**: ESLint, TypeScript typecheck, Vite build
 3. **Docker**: Build API image (after API job passes)
 
