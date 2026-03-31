@@ -1,6 +1,6 @@
 # Renovaite — Claude Code Context
 
-Renovaite is a Django + React application that helps homeowners plan renovation projects by generating structured plans with AI. The backend uses Django 5 + Django Ninja + PostgreSQL. The frontend uses React + TypeScript + Vite + Tailwind + shadcn/ui.
+Renovaite is a FastAPI + React application that helps homeowners plan renovation projects by generating structured plans with AI. The backend uses FastAPI + SQLModel + Alembic + PostgreSQL. The frontend uses React + TypeScript + Vite + Tailwind + shadcn/ui.
 
 ---
 
@@ -21,16 +21,17 @@ Renovaite is a Django + React application that helps homeowners plan renovation 
 
 ```
 renovaite/
-  api/                        # Django backend
+  api/                        # FastAPI backend
     renovaite/
-      models/                 # Django models
-      api/                    # Django Ninja routers + endpoints
-      services/               # Business logic (no direct DB calls in views)
+      models/                 # SQLModel table classes
+      api/                    # FastAPI routers + endpoints
+      services/               # Business logic (no direct DB calls in routers)
       schemas/                # Pydantic schemas (in/out)
       ai/                     # AI-related services (future)
-      settings/               # Django settings
-      urls.py
-      manage.py
+      settings/               # pydantic-settings config
+      db.py                   # SQLAlchemy engine + get_session dependency
+      main.py                 # FastAPI app factory + router mounts
+    alembic/                  # Alembic migrations
     tests/                    # Integration + unit tests
     .env.example              # Required env vars — keep up to date
   web/                        # React frontend
@@ -42,13 +43,13 @@ renovaite/
 
 ## Key standards (full detail in engineering standards skill)
 
-- **Auth:** JWT via `django-ninja-jwt`. All endpoints require auth. Apply `JWTAuth()` at router level.
-- **Permissions:** Every query must be scoped to `request.user`. Never return another user's data.
+- **Auth:** JWT via `PyJWT`. All endpoints require auth. Use a `current_user` FastAPI dependency on protected routers.
+- **Permissions:** Every query must be scoped to the authenticated user. Never return another user's data.
 - **Models:** UUID PKs, `created_at`, `updated_at`, `is_deleted` on all models. Never hard delete.
 - **Errors:** Always return `{ "error": str, "code": str }`. Never leak internals.
 - **Tests:** Unit tests for all service logic. Integration tests for all endpoints (happy path, 401, 403, 404).
-- **Migrations:** Always use Django migrations. Never modify schema manually.
-- **Secrets:** Never hardcode. All secrets via environment variables.
+- **Migrations:** Always use Alembic migrations (`alembic revision --autogenerate`). Never modify schema manually.
+- **Secrets:** Never hardcode. All secrets via environment variables + pydantic-settings.
 
 ---
 
@@ -75,21 +76,22 @@ Ask the user to provide the Notion Tasks DB URL if needed.
 
 ## Services pattern
 
-Business logic lives in `api/renovaite/services/` — not in views or routers.
+Business logic lives in `api/renovaite/services/` — not in routers.
 
 ```python
 # ✅ correct
-@router.post("/projects")
-def create_project(request, payload: ProjectIn):
-    project = ProjectService.create(user=request.user, data=payload)
-    return 201, project
+@router.post("/projects", status_code=201)
+def create_project(payload: ProjectIn, db: Session = Depends(get_session), user: User = Depends(current_user)):
+    project = ProjectService.create(user=user, data=payload, db=db)
+    return project
 
-# ❌ wrong — logic in the view
-@router.post("/projects")
-def create_project(request, payload: ProjectIn):
-    project = Project(user=request.user, **payload.dict())
-    project.save()
-    return 201, project
+# ❌ wrong — logic in the router
+@router.post("/projects", status_code=201)
+def create_project(payload: ProjectIn, db: Session = Depends(get_session)):
+    project = Project(**payload.model_dump())
+    db.add(project)
+    db.commit()
+    return project
 ```
 
 ---
@@ -98,9 +100,9 @@ def create_project(request, payload: ProjectIn):
 
 ```bash
 cd api
-cp .env.example .env        # fill in values
-uv run manage.py migrate
-uv run manage.py runserver
+cp .env.example .env                          # fill in values
+uv run alembic upgrade head                   # run migrations
+uv run uvicorn renovaite.main:app --reload    # start dev server
 ```
 
 Tests:
