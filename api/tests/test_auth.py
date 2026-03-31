@@ -38,8 +38,15 @@ def test_request_magic_link_invalid_email(client):
 
 
 # ---------------------------------------------------------------------------
-# GET /api/auth/magic-link/verify
+# POST /api/auth/magic-link/verify
 # ---------------------------------------------------------------------------
+
+
+def _post_verify(client, token):
+    return client.post(
+        "/api/auth/magic-link/verify",
+        json={"token": str(token)},
+    )
 
 
 def test_verify_valid_token(client, user, db):
@@ -52,7 +59,7 @@ def test_verify_valid_token(client, user, db):
     db.commit()
     db.refresh(token)
 
-    resp = client.get(f"/api/auth/magic-link/verify?token={token.token}")
+    resp = _post_verify(client, token.token)
     assert resp.status_code == 200
     data = resp.json()
     assert "access" in data
@@ -69,7 +76,7 @@ def test_verify_expired_token(client, user, db):
     db.commit()
     db.refresh(token)
 
-    resp = client.get(f"/api/auth/magic-link/verify?token={token.token}")
+    resp = _post_verify(client, token.token)
     assert resp.status_code == 401
     data = resp.json()
     assert data["code"] == "UNAUTHORIZED"
@@ -86,14 +93,14 @@ def test_verify_used_token(client, user, db):
     db.commit()
     db.refresh(token)
 
-    resp = client.get(f"/api/auth/magic-link/verify?token={token.token}")
+    resp = _post_verify(client, token.token)
     assert resp.status_code == 401
     data = resp.json()
     assert data["code"] == "UNAUTHORIZED"
 
 
 def test_verify_invalid_token(client):
-    resp = client.get(f"/api/auth/magic-link/verify?token={uuid.uuid4()}")
+    resp = _post_verify(client, uuid.uuid4())
     assert resp.status_code == 401
     data = resp.json()
     assert data["code"] == "UNAUTHORIZED"

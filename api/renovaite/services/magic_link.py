@@ -1,3 +1,4 @@
+import logging
 import uuid
 from datetime import UTC, datetime, timedelta
 
@@ -6,7 +7,13 @@ from sqlmodel import Session, select
 from renovaite.models.magic_link import MagicLinkToken
 from renovaite.models.user import User
 from renovaite.services.email import send_magic_link_email
+from renovaite.services.jwt import create_token_pair
 from renovaite.settings.base import get_settings
+
+logger = logging.getLogger(__name__)
+
+# TODO: move send_magic_link_email to MagicLinkService._send_email to make it
+# private to the service interface, consistent with the services pattern.
 
 
 class MagicLinkService:
@@ -24,27 +31,29 @@ class MagicLinkService:
         expiry = datetime.now(UTC) + timedelta(
             minutes=settings.magic_link_expiry_minutes
         )
-        token = MagicLinkToken(email=user.email, expires_at=expiry)
-        db.add(token)
-        db.commit()
-        db.refresh(token)
-
-        send_magic_link_email(email=email, token=str(token.token))
+        try:
+            token = MagicLinkToken(email=user.email, expires_at=expiry)
+            db.add(token)
+            db.commit()
+            db.refresh(token)
+            send_magic_link_email(email=email, token=str(token.token))
+        except Exception:
+            logger.exception("Failed to send magic link email to %s", email)
+            db.rollback()
+            # Don't re-raise — response is always 200 to prevent account enumeration.
 
     @staticmethod
-    def verify(token_str: str, db: Session) -> User:
+    def verify(token_id: uuid.UUID, db: Session) -> User:
         """
         Validate a magic link token and return the associated user.
-        Marks the token as used on success.
+        Marks the token as used and soft-deleted on success.
         Raises ValueError on invalid, expired, or already-used tokens.
         """
-        try:
-            token_uuid = uuid.UUID(token_str)
-        except (ValueError, AttributeError):
-            raise ValueError("invalid token") from None
-
         token = db.exec(
-            select(MagicLinkToken).where(MagicLinkToken.token == token_uuid)
+            select(MagicLinkToken).where(
+                MagicLinkToken.token == token_id,
+                MagicLinkToken.is_deleted == False,  # noqa: E712
+            )
         ).first()
 
         if token is None:
@@ -56,13 +65,25 @@ class MagicLinkService:
         if datetime.now(UTC) > token.expires_at.replace(tzinfo=UTC):
             raise ValueError("token expired")
 
+        users = db.exec(select(User).where(User.email == token.email)).all()
+        if len(users) != 1:
+            raise ValueError("user not found")
+        user = users[0]
+
         token.used_at = datetime.now(UTC)
+        token.updated_at = datetime.now(UTC)
+        token.is_deleted = True
         db.add(token)
         db.commit()
         db.refresh(token)
 
-        user = db.exec(select(User).where(User.email == token.email)).first()
-        if user is None:
-            raise ValueError("invalid token")
-
         return user
+
+    @staticmethod
+    def verify_and_issue_tokens(
+        token_id: uuid.UUID, db: Session
+    ) -> tuple[str, str]:
+        """Verify a magic link token and return (access_token, refresh_token)."""
+        user = MagicLinkService.verify(token_id, db)
+        pair = create_token_pair(user.id)  # type: ignore[arg-type]
+        return pair["access"], pair["refresh"]

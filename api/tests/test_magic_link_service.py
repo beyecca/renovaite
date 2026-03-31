@@ -3,6 +3,9 @@ from datetime import UTC, datetime, timedelta
 from unittest.mock import patch
 
 import pytest
+
+# TODO: consolidate the `user` fixture into api/tests/conftest.py — it is duplicated
+# verbatim in test_auth.py.
 from renovaite.models.magic_link import MagicLinkToken
 from renovaite.services.magic_link import MagicLinkService
 
@@ -61,7 +64,7 @@ def test_verify_returns_user_for_valid_token(user, db):
     db.commit()
     db.refresh(token)
 
-    result = MagicLinkService.verify(str(token.token), db=db)
+    result = MagicLinkService.verify(token.token, db=db)
     assert result.email == user.email
 
 
@@ -75,7 +78,7 @@ def test_verify_marks_token_as_used(user, db):
     db.commit()
     db.refresh(token)
 
-    MagicLinkService.verify(str(token.token), db=db)
+    MagicLinkService.verify(token.token, db=db)
 
     db.refresh(token)
     assert token.used_at is not None
@@ -92,7 +95,7 @@ def test_verify_raises_for_expired_token(user, db):
     db.refresh(token)
 
     with pytest.raises(ValueError, match="expired"):
-        MagicLinkService.verify(str(token.token), db=db)
+        MagicLinkService.verify(token.token, db=db)
 
 
 def test_verify_raises_for_used_token(user, db):
@@ -107,9 +110,9 @@ def test_verify_raises_for_used_token(user, db):
     db.refresh(token)
 
     with pytest.raises(ValueError, match="used"):
-        MagicLinkService.verify(str(token.token), db=db)
+        MagicLinkService.verify(token.token, db=db)
 
 
 def test_verify_raises_for_invalid_token(db):
     with pytest.raises(ValueError, match="invalid"):
-        MagicLinkService.verify(str(uuid.uuid4()), db=db)
+        MagicLinkService.verify(uuid.uuid4(), db=db)

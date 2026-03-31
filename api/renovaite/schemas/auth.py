@@ -1,3 +1,5 @@
+import uuid
+
 from pydantic import BaseModel, EmailStr
 
 
@@ -7,6 +9,10 @@ class MagicLinkRequestIn(BaseModel):
 
 class MagicLinkRequestOut(BaseModel):
     message: str
+
+
+class MagicLinkVerifyIn(BaseModel):
+    token: uuid.UUID
 
 
 class TokenPairOut(BaseModel):
