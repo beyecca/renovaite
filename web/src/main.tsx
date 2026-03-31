@@ -7,8 +7,9 @@ import { BrowserRouter } from 'react-router'
 // TODO: invert wrapping order — StrictMode should be outermost so it catches
 // effects/ref issues in the router itself: <StrictMode><BrowserRouter>...</BrowserRouter></StrictMode>
 createRoot(document.getElementById('root')!).render(
-  <BrowserRouter><StrictMode>
-    <App />
-  </StrictMode>
-  </BrowserRouter>,
+  <StrictMode>
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+  </StrictMode>,
 )
