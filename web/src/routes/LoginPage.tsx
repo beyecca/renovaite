@@ -11,11 +11,10 @@ export function LoginPage() {
     const [email, setEmail] = useState("");
     const [formState, setFormState] = useState<FormState>({ "state": "idle" });
     async function handleSubmit(formData: FormData) {
-        // TODO: rename to submittedEmail to avoid shadowing the outer email state variable.
-        const email = formData.get("email") as string;
-        setEmail(email);
+        const submittedEmail = formData.get("email") as string;
+        setEmail(submittedEmail);
         setFormState({ state: "loading" });
-        const resp = await postJson("/api/auth/magic-link", { email });
+        const resp = await postJson("/api/auth/magic-link", { email: submittedEmail });
         if (resp.ok) {
             setFormState({ state: "sent" });
         } else {
