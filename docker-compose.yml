@@ -5,4 +5,6 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DJANGO_SETTINGS_MODULE: renovaite.settings.dev
+      SECRET_KEY: dev-insecure-change-me
+      DEBUG: "true"
+      MAIL_CONSOLE: "true"

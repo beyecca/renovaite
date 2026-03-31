@@ -1,26 +1,29 @@
-from uuid import UUID
+import uuid
 
-from ninja import Schema
-from pydantic import EmailStr
+from pydantic import BaseModel, EmailStr
 
 
-class MagicLinkRequestIn(Schema):
+class MagicLinkRequestIn(BaseModel):
     email: EmailStr
 
 
-class MagicLinkRequestOut(Schema):
+class MagicLinkRequestOut(BaseModel):
     message: str
 
 
-class TokenPairOut(Schema):
+class MagicLinkVerifyIn(BaseModel):
+    token: uuid.UUID
+
+
+class TokenPairOut(BaseModel):
     access: str
     refresh: str
 
 
-class ErrorOut(Schema):
+class RefreshTokenIn(BaseModel):
+    refresh: str
+
+
+class ErrorOut(BaseModel):
     error: str
     code: str
-
-
-class MagicLinkVerifyIn(Schema):
-    token: UUID
