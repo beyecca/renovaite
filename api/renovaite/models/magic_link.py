@@ -1,23 +1,23 @@
 import uuid
+from datetime import UTC, datetime
 
-from django.db import models
+from sqlmodel import Field, SQLModel
 
 
-class MagicLinkToken(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    email = models.EmailField()
-    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    expires_at = models.DateTimeField()
-    used_at = models.DateTimeField(null=True, blank=True)
-    is_deleted = models.BooleanField(default=False)
+class MagicLinkToken(SQLModel, table=True):
+    __tablename__ = "magic_link_tokens"
 
-    class Meta:
-        db_table = "magic_link_tokens"
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    email: str = Field(index=True)
+    token: uuid.UUID = Field(default_factory=uuid.uuid4, unique=True, index=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    expires_at: datetime
+    used_at: datetime | None = Field(default=None, nullable=True)
+    is_deleted: bool = Field(default=False)
 
     # TODO: add a management command or periodic task to hard-purge tokens where
     # expires_at < now() - timedelta(days=7) to prevent unbounded table growth.
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         return f"MagicLinkToken({self.email})"
