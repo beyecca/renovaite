@@ -80,9 +80,7 @@ class MagicLinkService:
         return user
 
     @staticmethod
-    def verify_and_issue_tokens(
-        token_id: uuid.UUID, db: Session
-    ) -> tuple[str, str]:
+    def verify_and_issue_tokens(token_id: uuid.UUID, db: Session) -> tuple[str, str]:
         """Verify a magic link token and return (access_token, refresh_token)."""
         user = MagicLinkService.verify(token_id, db)
         pair = create_token_pair(user.id)  # type: ignore[arg-type]

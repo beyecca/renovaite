@@ -38,9 +38,7 @@ def verify_magic_link(
     db: Session = Depends(get_session),
 ) -> JSONResponse:
     try:
-        access, refresh = MagicLinkService.verify_and_issue_tokens(
-            payload.token, db=db
-        )
+        access, refresh = MagicLinkService.verify_and_issue_tokens(payload.token, db=db)
     except ValueError:
         return JSONResponse(
             status_code=401,
