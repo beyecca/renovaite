@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
   api:
-    name: API (uv + Django)
+    name: API (uv + FastAPI)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -52,12 +52,12 @@ jobs:
         run: uv run mypy renovaite
 
       - name: Sanity checks
-        run: |
-          uv run python -m compileall .
-          uv run python manage.py check
-      
+        run: uv run python -m compileall .
+
       - name: Run tests
         run: uv run pytest
+        env:
+          MAIL_CONSOLE: "true"
   web:
     name: Web (pnpm + Vite)
     runs-on: ubuntu-latest
@@ -89,6 +89,9 @@ jobs:
 
       - name: Typecheck
         run: pnpm run typecheck
+
+      - name: Test
+        run: pnpm test --run
 
       - name: Build
         run: pnpm build

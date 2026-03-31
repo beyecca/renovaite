@@ -1,27 +1,7 @@
-import json
 import uuid
+from datetime import UTC, datetime, timedelta
 
-import pytest
-from django.contrib.auth.models import User
-from django.test import Client
-from django.utils import timezone
-
-pytestmark = pytest.mark.django_db
-
-
-@pytest.fixture
-def client():
-    return Client()
-
-
-@pytest.fixture
-def user():
-    return User.objects.create_user(
-        username="testuser",
-        email="test@example.com",
-        password="unusedpassword",
-    )
-
+from renovaite.models.magic_link import MagicLinkToken
 
 # ---------------------------------------------------------------------------
 # POST /api/auth/magic-link
@@ -31,31 +11,28 @@ def user():
 def test_request_magic_link_known_email(client, user):
     resp = client.post(
         "/api/auth/magic-link",
-        data=json.dumps({"email": "test@example.com"}),
-        content_type="application/json",
+        json={"email": "test@example.com"},
     )
     assert resp.status_code == 200
-    data = json.loads(resp.content)
+    data = resp.json()
     assert "message" in data
 
 
 def test_request_magic_link_unknown_email(client):
     resp = client.post(
         "/api/auth/magic-link",
-        data=json.dumps({"email": "nobody@example.com"}),
-        content_type="application/json",
+        json={"email": "nobody@example.com"},
     )
     # Same response as known email — no account enumeration
     assert resp.status_code == 200
-    data = json.loads(resp.content)
+    data = resp.json()
     assert "message" in data
 
 
 def test_request_magic_link_invalid_email(client):
     resp = client.post(
         "/api/auth/magic-link",
-        data=json.dumps({"email": "not-an-email"}),
-        content_type="application/json",
+        json={"email": "not-an-email"},
     )
     assert resp.status_code == 422
 
@@ -65,57 +42,60 @@ def test_request_magic_link_invalid_email(client):
 # ---------------------------------------------------------------------------
 
 
-def test_verify_valid_token(client, user):
-    from renovaite.models.magic_link import MagicLinkToken
-
-    token = MagicLinkToken.objects.create(
+def test_verify_valid_token(client, user, db):
+    token = MagicLinkToken(
         email=user.email,
         token=uuid.uuid4(),
-        expires_at=timezone.now() + timezone.timedelta(minutes=15),
+        expires_at=datetime.now(UTC) + timedelta(minutes=15),
     )
+    db.add(token)
+    db.commit()
+    db.refresh(token)
 
     resp = client.get(f"/api/auth/magic-link/verify?token={token.token}")
     assert resp.status_code == 200
-    data = json.loads(resp.content)
+    data = resp.json()
     assert "access" in data
     assert "refresh" in data
 
 
-def test_verify_expired_token(client, user):
-    from renovaite.models.magic_link import MagicLinkToken
-
-    token = MagicLinkToken.objects.create(
+def test_verify_expired_token(client, user, db):
+    token = MagicLinkToken(
         email=user.email,
         token=uuid.uuid4(),
-        expires_at=timezone.now() - timezone.timedelta(minutes=1),
+        expires_at=datetime.now(UTC) - timedelta(minutes=1),
     )
+    db.add(token)
+    db.commit()
+    db.refresh(token)
 
     resp = client.get(f"/api/auth/magic-link/verify?token={token.token}")
     assert resp.status_code == 401
-    data = json.loads(resp.content)
+    data = resp.json()
     assert data["code"] == "UNAUTHORIZED"
 
 
-def test_verify_used_token(client, user):
-    from renovaite.models.magic_link import MagicLinkToken
-
-    token = MagicLinkToken.objects.create(
+def test_verify_used_token(client, user, db):
+    token = MagicLinkToken(
         email=user.email,
         token=uuid.uuid4(),
-        expires_at=timezone.now() + timezone.timedelta(minutes=15),
-        used_at=timezone.now(),
+        expires_at=datetime.now(UTC) + timedelta(minutes=15),
+        used_at=datetime.now(UTC),
     )
+    db.add(token)
+    db.commit()
+    db.refresh(token)
 
     resp = client.get(f"/api/auth/magic-link/verify?token={token.token}")
     assert resp.status_code == 401
-    data = json.loads(resp.content)
+    data = resp.json()
     assert data["code"] == "UNAUTHORIZED"
 
 
 def test_verify_invalid_token(client):
     resp = client.get(f"/api/auth/magic-link/verify?token={uuid.uuid4()}")
     assert resp.status_code == 401
-    data = json.loads(resp.content)
+    data = resp.json()
     assert data["code"] == "UNAUTHORIZED"
 
 
@@ -125,24 +105,22 @@ def test_verify_invalid_token(client):
 
 
 def test_refresh_token_success(client, user):
-    from ninja_jwt.tokens import RefreshToken
+    from renovaite.services.jwt import create_token_pair
 
-    refresh = RefreshToken.for_user(user)
+    pair = create_token_pair(user.id)
 
     resp = client.post(
         "/api/auth/token/refresh",
-        data=json.dumps({"refresh": str(refresh)}),
-        content_type="application/json",
+        json={"refresh": pair["refresh"]},
     )
     assert resp.status_code == 200
-    data = json.loads(resp.content)
+    data = resp.json()
     assert "access" in data
 
 
 def test_refresh_token_invalid(client):
     resp = client.post(
         "/api/auth/token/refresh",
-        data=json.dumps({"refresh": "not-a-valid-token"}),
-        content_type="application/json",
+        json={"refresh": "not-a-valid-token"},
     )
     assert resp.status_code == 401

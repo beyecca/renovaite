@@ -1,58 +1,48 @@
 import uuid
+from datetime import UTC, datetime, timedelta
 from unittest.mock import patch
 
 import pytest
-from django.contrib.auth.models import User
-from django.utils import timezone
-
-pytestmark = pytest.mark.django_db
-
-
-@pytest.fixture
-def user():
-    return User.objects.create_user(
-        username="testuser",
-        email="test@example.com",
-        password="unusedpassword",
-    )
-
+from renovaite.models.magic_link import MagicLinkToken
+from renovaite.services.magic_link import MagicLinkService
 
 # ---------------------------------------------------------------------------
 # MagicLinkService.request
 # ---------------------------------------------------------------------------
 
 
-def test_request_creates_token_for_known_user(user):
-    from renovaite.models.magic_link import MagicLinkToken
-    from renovaite.services.magic_link import MagicLinkService
-
+def test_request_creates_token_for_known_user(user, db):
     with patch("renovaite.services.magic_link.send_magic_link_email") as mock_send:
-        MagicLinkService.request(email="test@example.com")
+        MagicLinkService.request(email="test@example.com", db=db)
 
-    assert MagicLinkToken.objects.filter(email="test@example.com").exists()
+    token = db.exec(
+        __import__("sqlmodel")
+        .select(MagicLinkToken)
+        .where(MagicLinkToken.email == "test@example.com")
+    ).first()
+    assert token is not None
     mock_send.assert_called_once()
 
 
-def test_request_does_nothing_silently_for_unknown_email():
-    from renovaite.models.magic_link import MagicLinkToken
-    from renovaite.services.magic_link import MagicLinkService
-
+def test_request_does_nothing_silently_for_unknown_email(db):
     with patch("renovaite.services.magic_link.send_magic_link_email") as mock_send:
-        MagicLinkService.request(email="nobody@example.com")
+        MagicLinkService.request(email="nobody@example.com", db=db)
 
-    assert not MagicLinkToken.objects.filter(email="nobody@example.com").exists()
+    token = db.exec(
+        __import__("sqlmodel")
+        .select(MagicLinkToken)
+        .where(MagicLinkToken.email == "nobody@example.com")
+    ).first()
+    assert token is None
     mock_send.assert_not_called()
 
 
-def test_request_sends_email_with_token(user):
-    from renovaite.services.magic_link import MagicLinkService
-
+def test_request_sends_email_with_token(user, db):
     with patch("renovaite.services.magic_link.send_magic_link_email") as mock_send:
-        MagicLinkService.request(email="test@example.com")
+        MagicLinkService.request(email="test@example.com", db=db)
 
     call_kwargs = mock_send.call_args
     assert call_kwargs is not None
-    # email and token are passed
     assert "test@example.com" in str(call_kwargs)
 
 
@@ -61,67 +51,65 @@ def test_request_sends_email_with_token(user):
 # ---------------------------------------------------------------------------
 
 
-def test_verify_returns_user_for_valid_token(user):
-    from renovaite.models.magic_link import MagicLinkToken
-    from renovaite.services.magic_link import MagicLinkService
-
-    token = MagicLinkToken.objects.create(
+def test_verify_returns_user_for_valid_token(user, db):
+    token = MagicLinkToken(
         email=user.email,
         token=uuid.uuid4(),
-        expires_at=timezone.now() + timezone.timedelta(minutes=15),
+        expires_at=datetime.now(UTC) + timedelta(minutes=15),
     )
+    db.add(token)
+    db.commit()
+    db.refresh(token)
 
-    result = MagicLinkService.verify(str(token.token))
-    assert result == user
+    result = MagicLinkService.verify(str(token.token), db=db)
+    assert result.email == user.email
 
 
-def test_verify_marks_token_as_used(user):
-    from renovaite.models.magic_link import MagicLinkToken
-    from renovaite.services.magic_link import MagicLinkService
-
-    token = MagicLinkToken.objects.create(
+def test_verify_marks_token_as_used(user, db):
+    token = MagicLinkToken(
         email=user.email,
         token=uuid.uuid4(),
-        expires_at=timezone.now() + timezone.timedelta(minutes=15),
+        expires_at=datetime.now(UTC) + timedelta(minutes=15),
     )
+    db.add(token)
+    db.commit()
+    db.refresh(token)
 
-    MagicLinkService.verify(str(token.token))
+    MagicLinkService.verify(str(token.token), db=db)
 
-    token.refresh_from_db()
+    db.refresh(token)
     assert token.used_at is not None
 
 
-def test_verify_raises_for_expired_token(user):
-    from renovaite.models.magic_link import MagicLinkToken
-    from renovaite.services.magic_link import MagicLinkService
-
-    token = MagicLinkToken.objects.create(
+def test_verify_raises_for_expired_token(user, db):
+    token = MagicLinkToken(
         email=user.email,
         token=uuid.uuid4(),
-        expires_at=timezone.now() - timezone.timedelta(minutes=1),
+        expires_at=datetime.now(UTC) - timedelta(minutes=1),
     )
+    db.add(token)
+    db.commit()
+    db.refresh(token)
 
     with pytest.raises(ValueError, match="expired"):
-        MagicLinkService.verify(str(token.token))
+        MagicLinkService.verify(str(token.token), db=db)
 
 
-def test_verify_raises_for_used_token(user):
-    from renovaite.models.magic_link import MagicLinkToken
-    from renovaite.services.magic_link import MagicLinkService
-
-    token = MagicLinkToken.objects.create(
+def test_verify_raises_for_used_token(user, db):
+    token = MagicLinkToken(
         email=user.email,
         token=uuid.uuid4(),
-        expires_at=timezone.now() + timezone.timedelta(minutes=15),
-        used_at=timezone.now(),
+        expires_at=datetime.now(UTC) + timedelta(minutes=15),
+        used_at=datetime.now(UTC),
     )
+    db.add(token)
+    db.commit()
+    db.refresh(token)
 
     with pytest.raises(ValueError, match="used"):
-        MagicLinkService.verify(str(token.token))
+        MagicLinkService.verify(str(token.token), db=db)
 
 
-def test_verify_raises_for_invalid_token():
-    from renovaite.services.magic_link import MagicLinkService
-
+def test_verify_raises_for_invalid_token(db):
     with pytest.raises(ValueError, match="invalid"):
-        MagicLinkService.verify(str(uuid.uuid4()))
+        MagicLinkService.verify(str(uuid.uuid4()), db=db)
