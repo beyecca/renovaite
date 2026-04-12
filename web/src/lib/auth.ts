@@ -1,6 +1,6 @@
 // NOTE: Using localStorage for simplicity in this phase.
 // Tokens are susceptible to XSS. Migrate to httpOnly cookies before public launch.
-// TODO: create a Notion task to track the httpOnly cookie migration and link it here.
+// Tracking: https://www.notion.so/3348865b312281bbbc43c09ce4aad3d9
 const ACCESS_KEY = "access_token";
 const REFRESH_KEY = "refresh_token";
 
