@@ -30,7 +30,10 @@ def require_registration_key(
     if settings.registration_secret_key is None:
         raise HTTPException(
             status_code=503,
-            detail={"error": "Registration is not enabled.", "code": "REGISTRATION_DISABLED"},
+            detail={
+                "error": "Registration is not enabled.",
+                "code": "REGISTRATION_DISABLED",
+            },
         )
     if x_registration_key != settings.registration_secret_key:
         raise HTTPException(
@@ -113,10 +116,14 @@ def register_user(
     except ValueError:
         return JSONResponse(
             status_code=409,
-            content=ErrorOut(error="Email already registered.", code="CONFLICT").model_dump(),
+            content=ErrorOut(
+                error="Email already registered.", code="CONFLICT"
+            ).model_dump(),
         )
     assert user.id is not None
     return JSONResponse(
         status_code=201,
-        content=RegisterOut(id=user.id, email=user.email, created_at=user.created_at).model_dump(mode="json"),
+        content=RegisterOut(
+            id=user.id, email=user.email, created_at=user.created_at
+        ).model_dump(mode="json"),
     )
