@@ -2,6 +2,7 @@ import os
 
 # Set before any settings are loaded so mail_console=True for all tests
 os.environ.setdefault("MAIL_CONSOLE", "true")
+os.environ.setdefault("REGISTRATION_SECRET_KEY", "test-reg-key")
 
 import pytest
 
