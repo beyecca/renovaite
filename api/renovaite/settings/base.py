@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     )
 
     secret_key: str = "dev-insecure-change-me"
+    registration_secret_key: str | None = None
     debug: bool = False
 
     database_url: str = f"sqlite:///{BASE_DIR}/db.sqlite3"

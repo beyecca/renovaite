@@ -1,5 +1,5 @@
 import jwt
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Header, HTTPException
 from fastapi.responses import JSONResponse
 from sqlmodel import Session, select
 
@@ -11,12 +11,32 @@ from renovaite.schemas.auth import (
     MagicLinkRequestOut,
     MagicLinkVerifyIn,
     RefreshTokenIn,
+    RegisterIn,
+    RegisterOut,
     TokenPairOut,
 )
 from renovaite.services.jwt import create_token_pair, decode_token
 from renovaite.services.magic_link import MagicLinkService
+from renovaite.services.user import UserService
+from renovaite.settings.base import Settings, get_settings
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+def require_registration_key(
+    x_registration_key: str | None = Header(default=None),
+    settings: Settings = Depends(get_settings),
+) -> None:
+    if settings.registration_secret_key is None:
+        raise HTTPException(
+            status_code=503,
+            detail={"error": "Registration is not enabled.", "code": "REGISTRATION_DISABLED"},
+        )
+    if x_registration_key != settings.registration_secret_key:
+        raise HTTPException(
+            status_code=403,
+            detail={"error": "Invalid registration key.", "code": "FORBIDDEN"},
+        )
 
 
 # TODO(pre-launch): add per-IP rate limiting (e.g. slowapi 5/min) to prevent
@@ -80,3 +100,23 @@ def refresh_token(
 
     pair = create_token_pair(user_id)
     return JSONResponse(status_code=200, content={"access": pair["access"]})
+
+
+@router.post("/register", status_code=201)
+def register_user(
+    payload: RegisterIn,
+    db: Session = Depends(get_session),
+    _: None = Depends(require_registration_key),
+) -> JSONResponse:
+    try:
+        user = UserService.create(email=str(payload.email), db=db)
+    except ValueError:
+        return JSONResponse(
+            status_code=409,
+            content=ErrorOut(error="Email already registered.", code="CONFLICT").model_dump(),
+        )
+    assert user.id is not None
+    return JSONResponse(
+        status_code=201,
+        content=RegisterOut(id=user.id, email=user.email, created_at=user.created_at).model_dump(mode="json"),
+    )

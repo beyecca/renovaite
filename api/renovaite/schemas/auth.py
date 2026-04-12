@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 
 from pydantic import BaseModel, EmailStr
 
@@ -27,3 +28,13 @@ class RefreshTokenIn(BaseModel):
 class ErrorOut(BaseModel):
     error: str
     code: str
+
+
+class RegisterIn(BaseModel):
+    email: EmailStr
+
+
+class RegisterOut(BaseModel):
+    id: int
+    email: str
+    created_at: datetime
