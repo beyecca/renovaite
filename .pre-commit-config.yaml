@@ -8,6 +8,10 @@ repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.8.4
     hooks:
+      - id: ruff-format
+        name: ruff format (api)
+        args: [--config, api/pyproject.toml]
+        files: ^api/.*\.py$
       - id: ruff
         name: ruff (api)
         args: [--config, api/pyproject.toml]
