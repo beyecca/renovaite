@@ -94,17 +94,19 @@ describe("authRequest", () => {
         expect(options.headers).not.toHaveProperty("Authorization");
     });
 
-    test("dispatches auth:unauthorized event on 401", async () => {
+    test("dispatches auth:unauthorized event on 401 without hard redirect", async () => {
         vi.stubGlobal("fetch", vi.fn(async () =>
             new Response(
                 JSON.stringify({ error: "Unauthorized", code: "UNAUTHORIZED" }),
                 { status: 401, headers: { "Content-Type": "application/json" } }
             )
         ));
+        const originalHref = window.location.href;
         const listener = vi.fn();
         window.addEventListener("auth:unauthorized", listener);
         await authRequest("/test");
         expect(listener).toHaveBeenCalled();
+        expect(window.location.href).toBe(originalHref);
         window.removeEventListener("auth:unauthorized", listener);
     });
 });

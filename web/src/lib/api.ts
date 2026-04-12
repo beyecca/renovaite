@@ -53,12 +53,9 @@ export async function authRequest<T>(path: string, options?: RequestInit): Promi
     },
   });
   if (!result.ok && result.kind === "client_error" && result.status === 401) {
-    // TODO: replace with router-aware navigation once a global auth context exists.
-    // window.location.href causes a full page reload and execution continues after
-    // this point — consumers may update unmounted state. Preferred fix: emit a custom
-    // event that a top-level router listener handles, or accept an onUnauthorized callback.
+    // Emit event so the top-level router listener in App.tsx can navigate to /login
+    // without a full page reload.
     window.dispatchEvent(new CustomEvent("auth:unauthorized"));
-    window.location.href = "/login";
   }
   return result;
 }
