@@ -12,9 +12,6 @@ from renovaite.settings.base import get_settings
 
 logger = logging.getLogger(__name__)
 
-# TODO: move send_magic_link_email to MagicLinkService._send_email to make it
-# private to the service interface, consistent with the services pattern.
-
 
 class MagicLinkService:
     @staticmethod
@@ -36,7 +33,7 @@ class MagicLinkService:
             db.add(token)
             db.commit()
             db.refresh(token)
-            send_magic_link_email(email=email, token=str(token.token))
+            MagicLinkService._send_email(email=email, token=str(token.token))
         except Exception:
             logger.exception("Failed to send magic link email to %s", email)
             db.rollback()
@@ -78,6 +75,10 @@ class MagicLinkService:
         db.refresh(token)
 
         return user
+
+    @staticmethod
+    def _send_email(email: str, token: str) -> None:
+        send_magic_link_email(email=email, token=token)
 
     @staticmethod
     def verify_and_issue_tokens(token_id: uuid.UUID, db: Session) -> tuple[str, str]:
