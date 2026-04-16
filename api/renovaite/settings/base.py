@@ -1,6 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent  # api/
@@ -35,6 +36,17 @@ class Settings(BaseSettings):
     mail_console: bool = False  # if True, print emails to stdout instead of sending
 
     allowed_hosts: list[str] = ["localhost", "127.0.0.1"]
+
+    @field_validator("debug", mode="before")
+    @classmethod
+    def parse_debug(cls, value: object) -> object:
+        if isinstance(value, str):
+            normalized = value.strip().lower()
+            if normalized in {"release", "production", "prod"}:
+                return False
+            if normalized in {"development", "dev"}:
+                return True
+        return value
 
 
 @lru_cache
