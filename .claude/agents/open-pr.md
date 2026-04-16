@@ -30,8 +30,6 @@ You are opening a GitHub pull request for the current Renovaite branch.
 
 ## Related
 <prd-reference>
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
 ```
 
 7. Return the PR URL to the user.
