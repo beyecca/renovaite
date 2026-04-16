@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
-from sqlmodel import Session, select
+from sqlmodel import Session, desc, select
 
 from renovaite.db import get_session
 from renovaite.dependencies import current_user
@@ -50,7 +50,7 @@ def list_projects(
     statement = (
         select(Project)
         .where(Project.user_id == user.id, Project.is_deleted == False)  # noqa: E712
-        .order_by(Project.created_at.desc())
+        .order_by(desc(Project.created_at))
     )
     return list(db.exec(statement))
 
