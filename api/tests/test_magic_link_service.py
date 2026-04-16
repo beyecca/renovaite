@@ -3,9 +3,6 @@ from datetime import UTC, datetime, timedelta
 from unittest.mock import patch
 
 import pytest
-
-# TODO: consolidate the `user` fixture into api/tests/conftest.py — it is duplicated
-# verbatim in test_auth.py.
 from renovaite.models.magic_link import MagicLinkToken
 from renovaite.services.magic_link import MagicLinkService
 
@@ -15,7 +12,9 @@ from renovaite.services.magic_link import MagicLinkService
 
 
 def test_request_creates_token_for_known_user(user, db):
-    with patch("renovaite.services.magic_link.send_magic_link_email") as mock_send:
+    with patch(
+        "renovaite.services.magic_link.MagicLinkService._send_email"
+    ) as mock_send:
         MagicLinkService.request(email="test@example.com", db=db)
 
     token = db.exec(
@@ -28,7 +27,9 @@ def test_request_creates_token_for_known_user(user, db):
 
 
 def test_request_does_nothing_silently_for_unknown_email(db):
-    with patch("renovaite.services.magic_link.send_magic_link_email") as mock_send:
+    with patch(
+        "renovaite.services.magic_link.MagicLinkService._send_email"
+    ) as mock_send:
         MagicLinkService.request(email="nobody@example.com", db=db)
 
     token = db.exec(
@@ -41,7 +42,9 @@ def test_request_does_nothing_silently_for_unknown_email(db):
 
 
 def test_request_sends_email_with_token(user, db):
-    with patch("renovaite.services.magic_link.send_magic_link_email") as mock_send:
+    with patch(
+        "renovaite.services.magic_link.MagicLinkService._send_email"
+    ) as mock_send:
         MagicLinkService.request(email="test@example.com", db=db)
 
     call_kwargs = mock_send.call_args
